@@ -1,39 +1,35 @@
-
 #include <Servo.h>
 #include <Timer.h>
 
-//#define EXPONENTIAL       // OK
-//#define RELATIVE          // old, don't use
-#define SIGMOID             // Best
-//#define PROPORTIONAL      // twitchy
+#define SIGMOID             
 
 #define SIGMOID_SLOPE       1
 #define SIGMOID_OFFSET      4
 
 #if !defined(EXPONENTIAL) ^ !defined(SIGMOID) ^ !defined(PROPORTIONAL) ^ !defined(RELATIVE)
 
-#else
-  #error "Please define ONE tracking curve: EXPONENTIAL, SIGMOID, PROPORTIONAL, RELATIVE"
-#endif
 
-
-#define LEFT_RSSI_PIN       0     // analog RSSI measurement pin
+#define LEFT_RSSI_PIN       0     // analog RSSI
 #define RIGHT_RSSI_PIN      1
-#define PAN_SERVO_PIN       5     // Pan servo pin
-
+#define PAN_SERVO_PIN       4     // servo pin
 #define RSSI_OFFSET_RIGHT   0
 #define RSSI_OFFSET_LEFT    0
+
 
 #define RSSI_MAX            400
 #define RSSI_MIN            120
 
+
 #define SERVO_MAX           180
 #define SERVO_MIN           0
 
+
 #define SERVO_MAX_STEP      5
-#define SERVO_MIN_STEP      0.09     // prevents windup and servo crawl
+#define SERVO_MIN_STEP      0.09    
+
 
 #define DEADBAND            5
+
 
 #define SERVO_DIRECTION     1
 
@@ -84,18 +80,8 @@ void mainLoop() {
   uint16_t avgLeft = max(avg(rssi_left_array, FIR_SIZE) + RSSI_OFFSET_LEFT, RSSI_MIN);
   uint16_t avgRight = max(avg(rssi_right_array, FIR_SIZE) + RSSI_OFFSET_RIGHT, RSSI_MIN);
 
-//  If avg RSSI is above 90%, don't move
-//  if ((avgRight + avgLeft) / 2 > 360) {
-//    return;
-//  }
-
-  /*
-     the lower total RSSI is, the lower deadband gets
-     allows more precise tracking when target is far away
-  */
   uint8_t dynamicDeadband = (float(avgRight + avgLeft) / 2 - RSSI_MIN) / (RSSI_MAX - RSSI_MIN) * DEADBAND;
 
-  // if target is in the middle, don't move
   if (abs(avgRight - avgLeft) < dynamicDeadband ) {
     return;
   }
@@ -150,21 +136,20 @@ void mainLoop() {
   #endif
   }
 
-  // upper and lower limit for angle step
+  // верхня і нижня межа кроку кута
   ang = (abs(ang) > SERVO_MAX_STEP ? SERVO_MAX_STEP * ang/abs(ang) : ang);
   ang = (abs(ang) < SERVO_MIN_STEP ? 0 : ang);
 
-  // move servo by n degrees
+  // перемістити серво на n градусів
   movePanBy(ang);
 
 
   if (debug) {
-//    Serial.print("RSSI%: ");
-//    Serial.print(map(avgLeft, RSSI_MIN, RSSI_MAX, 0, 100));
-//    Serial.print(", ");
-//    Serial.print(map(avgRight, RSSI_MIN, RSSI_MAX, 0, 100));
+   Serial.print("RSSI%: ");
+   Serial.print(map(avgLeft, RSSI_MIN, RSSI_MAX, 0, 100));
+   Serial.print(", ");
+   Serial.print(map(avgRight, RSSI_MIN, RSSI_MAX, 0, 100));
 
-    // raw rssi values, use these for RSSI_MIN and RSSI_MAX
     Serial.print("Calibration - left: ");
     Serial.print(avgLeft);
     Serial.print(" right: ");
